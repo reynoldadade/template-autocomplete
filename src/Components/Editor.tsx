@@ -1,13 +1,30 @@
-import { Editor, EditorState, RichUtils, getDefaultKeyBinding } from 'draft-js'
+import { CompositeDecorator, Editor, EditorState, RichUtils, getDefaultKeyBinding } from 'draft-js'
 import 'draft-js/dist/Draft.css'
 import { useMemo, useRef, useState } from 'react'
 import React from 'react'
 import BlockStyleControls from './BlockStyleControls'
 import InlineStyleControls from './InlineStyleControls'
 import clsx from 'clsx'
+import { useCustomDraftUtils } from '../hooks/useCustomDraftUtils'
+import Autocomplete from './Autocomplete'
 
 export default function EditorWrapper() {
-  const [editorState, setEditorState] = useState(() => EditorState.createEmpty())
+  const { autocompleteStrategy, autocompletedEntryStrategy } = useCustomDraftUtils()
+  const [editorState, setEditorState] = useState<EditorState>(() =>
+    EditorState.createEmpty(
+      new CompositeDecorator([
+        {
+          strategy: autocompleteStrategy,
+          component: (props) => (
+            <Autocomplete
+              {...props}
+              setEditorState={setEditorState}
+            />
+          ),
+        },
+      ]),
+    ),
+  )
   const editor = useRef<Editor | null>(null)
 
   // create memo for content state
