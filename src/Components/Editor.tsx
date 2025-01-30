@@ -4,6 +4,8 @@ import { useRef, useState } from 'react'
 import React from 'react'
 
 import BlockStyleControls from './BlockStyleControls'
+import InlineStyleControl from './InlineStyleControls'
+import InlineStyleControls from './InlineStyleControls'
 
 export default function EditorWrapper() {
   const [editorState, setEditorState] = useState(() => EditorState.createEmpty())
@@ -25,6 +27,11 @@ export default function EditorWrapper() {
   return (
     <div className="RichEditor-root">
       <BlockStyleControls
+        editorState={editorState}
+        onToggle={toggleBlockType}
+      />
+
+      <InlineStyleControls
         editorState={editorState}
         onToggle={toggleBlockType}
       />
