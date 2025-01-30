@@ -21,4 +21,22 @@ export default function BlockStyleControls({ editorState, onToggle }: BlockStyle
     { label: 'OL', style: 'ordered-list-item' },
     { label: 'Code Block', style: 'code-block' },
   ]
+  const selection = editorState.getSelection()
+  const blockType = editorState
+    .getCurrentContent()
+    .getBlockForKey(selection.getStartKey())
+    .getType()
+  return (
+    <div className="RichEditor-controls">
+      {BLOCK_TYPES.map((type) => (
+        <FormatButton
+          key={type.label}
+          active={type.style === blockType}
+          label={type.label}
+          onToggle={onToggle}
+          style={type.style}
+        />
+      ))}
+    </div>
+  )
 }
