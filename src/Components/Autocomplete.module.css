@@ -17,3 +17,11 @@
   padding: 5px;
   cursor: pointer;
 }
+
+.highlight {
+  background-color: #ddd;
+}
+
+.noHighlight {
+  background-color: #fff;
+}

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import styles from './Autocomplete.module.css'
 import { useCustomDraftUtils } from '../hooks/useCustomDraftUtils'
+import clsx from 'clsx'
 
 interface AutocompleteProps {
   children: React.ReactNode
@@ -31,6 +32,8 @@ export default function Autocomplete({
   const [showSuggestions, setShowSuggestions] = useState<boolean>(true)
   // we need to be able to trigger an open and close for the autocomplete dropdown outside the component even if suggestion exists
   const dropdownRef = useRef<HTMLDivElement | null>(null)
+  // to highlight the suggestion
+  const [highlightIndex, setHighlightIndex] = useState<number>(0)
 
   const matchString = decoratedText.replace('<>', '')
 
@@ -42,6 +45,7 @@ export default function Autocomplete({
         s.toLocaleLowerCase().startsWith(matchString.toLowerCase()),
       )
       setFilteredSuggestions(filtered)
+      setHighlightIndex(0)
     }
   }, [matchString])
 
@@ -73,10 +77,13 @@ export default function Autocomplete({
           className={styles.dropDown}
           ref={dropdownRef}
         >
-          {filteredSuggestions.map((suggestion) => (
+          {filteredSuggestions.map((suggestion, index) => (
             <div
               key={suggestion}
-              className={styles.dropDownItem}
+              className={clsx(
+                styles.dropDownItem,
+                index === highlightIndex ? styles.highlight : styles.noHighlight,
+              )}
               onClick={() => handleSelect(suggestion)}
             >
               {suggestion}
