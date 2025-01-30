@@ -1,4 +1,12 @@
-import { CompositeDecorator, Editor, EditorState, RichUtils, getDefaultKeyBinding } from 'draft-js'
+import {
+  CompositeDecorator,
+  Editor,
+  EditorState,
+  Modifier,
+  RichUtils,
+  SelectionState,
+  getDefaultKeyBinding,
+} from 'draft-js'
 import 'draft-js/dist/Draft.css'
 import { useMemo, useRef, useState } from 'react'
 import React from 'react'
@@ -10,7 +18,7 @@ import Autocomplete from './Autocomplete'
 import AutocompletedEntry from './AutocompleteEntry'
 
 export default function EditorWrapper() {
-  const { autocompleteStrategy, autocompletedEntryStrategy, replaceText } = useCustomDraftUtils()
+  const { autocompleteStrategy, autocompletedEntryStrategy } = useCustomDraftUtils()
   const [editorState, setEditorState] = useState<EditorState>(() =>
     EditorState.createEmpty(
       new CompositeDecorator([
@@ -72,19 +80,38 @@ export default function EditorWrapper() {
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    const currentContent = editorState.getCurrentContent()
     const selection = editorState.getSelection()
+    if (!selection.isCollapsed()) return // Only handle backspace for single cursor position
+
+    const currentContent = editorState.getCurrentContent()
     const blockKey = selection.getStartKey()
     const block = currentContent.getBlockForKey(blockKey)
     const text = block.getText()
+    const cursorPosition = selection.getStartOffset()
 
-    if (e.key === 'Backspace') {
-      // Detect if the cursor is at the end of an autocompleted entry and delete the entire entry
-      const match = text.match(/<([^<>]+)>$/)
-      if (match) {
-        e.preventDefault()
-        replaceText(currentContent, blockKey, text.lastIndexOf('<'), '', setEditorState)
-      }
+    // Check if Backspace is pressed at the end of an autocompleted entry
+    const match = text.slice(0, cursorPosition).match(/<([^<>]+)>$/)
+    if (e.key === 'Backspace' && match) {
+      e.preventDefault() // Prevent default character deletion
+
+      // Delete the entire <Tag> entry
+      const newContentState = Modifier.replaceText(
+        currentContent,
+        SelectionState.createEmpty(blockKey).merge({
+          anchorOffset: cursorPosition - match[0].length, // Start of the match
+          focusOffset: cursorPosition, // End of the match
+        }),
+        '',
+      )
+
+      // Update the editor state
+      onChange(
+        EditorState.push(
+          EditorState.createWithContent(newContentState),
+          newContentState,
+          'remove-range',
+        ),
+      )
     }
   }
 
