@@ -46,6 +46,19 @@ export const useCustomDraftUtils = () => {
     }
   }
 
+  // Strategy for detecting autocompleted entries
+  const autocompletedEntryStrategy = (
+    contentBlock: ContentBlock,
+    callback: (start: number, end: number) => void,
+  ) => {
+    const text = contentBlock.getText()
+    const regex = /<[^<>]+>/g // Matches already completed entries like <Tag1>
+    let matchArr
+    while ((matchArr = regex.exec(text)) !== null) {
+      callback(matchArr.index, matchArr.index + matchArr[0].length)
+    }
+  }
+
   return {
     replaceText,
   }
