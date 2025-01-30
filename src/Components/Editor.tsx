@@ -1,15 +1,19 @@
-import { Editor, EditorState, RichUtils } from 'draft-js'
+import { Editor, EditorState, RichUtils, getDefaultKeyBinding } from 'draft-js'
 import 'draft-js/dist/Draft.css'
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import React from 'react'
-
 import BlockStyleControls from './BlockStyleControls'
-import InlineStyleControl from './InlineStyleControls'
 import InlineStyleControls from './InlineStyleControls'
+import clsx from 'clsx'
 
 export default function EditorWrapper() {
   const [editorState, setEditorState] = useState(() => EditorState.createEmpty())
   const editor = useRef<Editor | null>(null)
+
+  // create memo for content state
+
+  const contentState = useMemo(() => editorState.getCurrentContent(), [editorState])
+
   function focusEditor() {
     if (editor.current) {
       editor.current.focus()
@@ -19,9 +23,42 @@ export default function EditorWrapper() {
   function toggleBlockType(blockType: Draft.DraftModel.Constants.DraftBlockType) {
     onChange(RichUtils.toggleBlockType(editorState, blockType))
   }
+  // this function is called when an inline style button is clicked
+  function toggleInlineStyle(inlineStyle: string) {
+    onChange(RichUtils.toggleInlineStyle(editorState, inlineStyle))
+  }
   // this is to handle the change event of the editor its cleaner than calling setState directly
   function onChange(editorState: EditorState) {
     setEditorState(editorState)
+  }
+  // handle keyboard commands
+  function handleKeyCommand(command: string) {
+    const newState = RichUtils.handleKeyCommand(editorState, command)
+    if (newState) {
+      onChange(newState)
+      return 'handled'
+    }
+    return 'not-handled'
+  }
+
+  function mapKeyToEditorCommand(e: React.KeyboardEvent) {
+    if (e.key === 'Tab') {
+      const newEditorState = RichUtils.onTab(e, editorState, 4)
+      if (newEditorState !== editorState) {
+        onChange(newEditorState)
+      }
+      return null
+    }
+    return getDefaultKeyBinding(e)
+  }
+
+  function getBlockStyle(block: Draft.ContentBlock) {
+    switch (block.getType()) {
+      case 'blockquote':
+        return 'RichEditor-blockquote'
+      default:
+        return ''
+    }
   }
 
   return (
@@ -33,14 +70,27 @@ export default function EditorWrapper() {
 
       <InlineStyleControls
         editorState={editorState}
-        onToggle={toggleBlockType}
+        onToggle={toggleInlineStyle}
       />
-      <Editor
-        ref={editor}
-        editorState={editorState}
-        onChange={setEditorState}
-        placeholder="Write something!"
-      />
+      <div
+        onClick={focusEditor}
+        className={clsx(
+          'RichEditor-editor',
+          !contentState.hasText() && contentState.getBlockMap().first().getType() !== 'unstyled'
+            ? 'RichEditor-hidePlaceholder'
+            : '',
+        )}
+      >
+        <Editor
+          ref={editor}
+          editorState={editorState}
+          onChange={setEditorState}
+          placeholder="Write something!"
+          handleKeyCommand={handleKeyCommand}
+          keyBindingFn={mapKeyToEditorCommand}
+          blockStyleFn={getBlockStyle}
+        />
+      </div>
     </div>
   )
 }
