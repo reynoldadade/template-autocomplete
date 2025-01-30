@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import styles from './AutoComplete.module.css'
+import styles from './Autocomplete.module.css'
 import { useCustomDraftUtils } from '../hooks/useCustomDraftUtils'
 
 interface AutocompleteProps {
@@ -11,7 +11,6 @@ interface AutocompleteProps {
   contentState: Draft.ContentState
   blockKey: string
   start: number
-  newText: string
   onEditorStateChange: (editorState: Draft.EditorState) => void
 }
 
@@ -23,7 +22,6 @@ export default function Autocomplete({
   contentState,
   blockKey,
   start,
-  newText,
   onEditorStateChange,
 }: AutocompleteProps) {
   const { replaceText } = useCustomDraftUtils()
@@ -40,7 +38,9 @@ export default function Autocomplete({
   // this will run everytime matchstring changes
   useEffect(() => {
     if (matchString.length > 0) {
-      const filtered = SUGGESTIONS.filter((s) => s.startsWith(matchString))
+      const filtered = SUGGESTIONS.filter((s) =>
+        s.toLocaleLowerCase().startsWith(matchString.toLowerCase()),
+      )
       setFilteredSuggestions(filtered)
     }
   }, [matchString])

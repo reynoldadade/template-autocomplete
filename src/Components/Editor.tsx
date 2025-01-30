@@ -7,6 +7,7 @@ import InlineStyleControls from './InlineStyleControls'
 import clsx from 'clsx'
 import { useCustomDraftUtils } from '../hooks/useCustomDraftUtils'
 import Autocomplete from './Autocomplete'
+import AutocompletedEntry from './AutocompleteEntry'
 
 export default function EditorWrapper() {
   const { autocompleteStrategy, autocompletedEntryStrategy } = useCustomDraftUtils()
@@ -18,10 +19,11 @@ export default function EditorWrapper() {
           component: (props) => (
             <Autocomplete
               {...props}
-              setEditorState={setEditorState}
+              onEditorStateChange={onChange}
             />
           ),
         },
+        { strategy: autocompletedEntryStrategy, component: AutocompletedEntry },
       ]),
     ),
   )

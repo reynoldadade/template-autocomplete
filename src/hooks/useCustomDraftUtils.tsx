@@ -61,5 +61,7 @@ export const useCustomDraftUtils = () => {
 
   return {
     replaceText,
+    autocompleteStrategy,
+    autocompletedEntryStrategy,
   }
 }
