@@ -1,8 +1,9 @@
-import { Editor, EditorState } from 'draft-js'
+import { Editor, EditorState, RichUtils } from 'draft-js'
 import 'draft-js/dist/Draft.css'
 import { useRef, useState } from 'react'
 import React from 'react'
-import styles from './Editor.module.css'
+
+import BlockStyleControls from './BlockStyleControls'
 
 export default function EditorWrapper() {
   const [editorState, setEditorState] = useState(() => EditorState.createEmpty())
@@ -12,9 +13,21 @@ export default function EditorWrapper() {
       editor.current.focus()
     }
   }
+  // this function is called when a block style button is clicked
+  function toggleBlockType(blockType: Draft.DraftModel.Constants.DraftBlockType) {
+    onChange(RichUtils.toggleBlockType(editorState, blockType))
+  }
+  // this is to handle the change event of the editor its cleaner than calling setState directly
+  function onChange(editorState: EditorState) {
+    setEditorState(editorState)
+  }
 
   return (
-    <div className={styles.editor}>
+    <div className="RichEditor-root">
+      <BlockStyleControls
+        editorState={editorState}
+        onToggle={toggleBlockType}
+      />
       <Editor
         ref={editor}
         editorState={editorState}
