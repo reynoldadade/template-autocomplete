@@ -44,7 +44,7 @@ export default function Autocomplete({
       const filtered = SUGGESTIONS.filter((s) =>
         s.toLocaleLowerCase().startsWith(matchString.toLowerCase()),
       )
-      setFilteredSuggestions(filtered)
+      setFilteredSuggestions(filtered.length > 0 ? filtered : [matchString])
       setHighlightIndex(0)
     }
   }, [matchString])

@@ -1,4 +1,14 @@
-import { ContentBlock, ContentState, EditorState, Modifier, SelectionState } from 'draft-js'
+import {
+  CompositeDecorator,
+  ContentBlock,
+  ContentState,
+  EditorState,
+  Modifier,
+  SelectionState,
+} from 'draft-js'
+import Autocomplete from '../Components/Autocomplete'
+import AutocompletedEntry from '../Components/AutocompleteEntry'
+import React from 'react'
 
 export const useCustomDraftUtils = () => {
   const replaceText = (
@@ -21,12 +31,28 @@ export const useCustomDraftUtils = () => {
       `<${newText}>`,
     )
 
+    const newEditorState = EditorState.push(
+      EditorState.createWithContent(newContentState),
+      newContentState,
+      'insert-characters',
+    )
+
+    // Reset decorator to ensure autocomplete works again next time
     onEditorStateChange(
-      EditorState.push(
-        EditorState.createWithContent(newContentState),
-        newContentState,
-        'insert-characters',
-      ),
+      EditorState.set(newEditorState, {
+        decorator: new CompositeDecorator([
+          {
+            strategy: autocompleteStrategy,
+            component: (props) => (
+              <Autocomplete
+                {...props}
+                onEditorStateChange={onEditorStateChange}
+              />
+            ),
+          },
+          { strategy: autocompletedEntryStrategy, component: AutocompletedEntry },
+        ]),
+      }),
     )
   }
 

@@ -10,7 +10,7 @@ import Autocomplete from './Autocomplete'
 import AutocompletedEntry from './AutocompleteEntry'
 
 export default function EditorWrapper() {
-  const { autocompleteStrategy, autocompletedEntryStrategy } = useCustomDraftUtils()
+  const { autocompleteStrategy, autocompletedEntryStrategy, replaceText } = useCustomDraftUtils()
   const [editorState, setEditorState] = useState<EditorState>(() =>
     EditorState.createEmpty(
       new CompositeDecorator([
@@ -61,14 +61,31 @@ export default function EditorWrapper() {
   }
 
   function mapKeyToEditorCommand(e: React.KeyboardEvent) {
-    if (e.key === 'Tab') {
-      const newEditorState = RichUtils.onTab(e, editorState, 4)
-      if (newEditorState !== editorState) {
-        onChange(newEditorState)
-      }
-      return null
-    }
+    // if (e.key === 'Tab') {
+    //   const newEditorState = RichUtils.onTab(e, editorState, 4)
+    //   if (newEditorState !== editorState) {
+    //     onChange(newEditorState)
+    //   }
+    //   return null
+    // }
     return getDefaultKeyBinding(e)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    const currentContent = editorState.getCurrentContent()
+    const selection = editorState.getSelection()
+    const blockKey = selection.getStartKey()
+    const block = currentContent.getBlockForKey(blockKey)
+    const text = block.getText()
+
+    if (e.key === 'Backspace') {
+      // Detect if the cursor is at the end of an autocompleted entry and delete the entire entry
+      const match = text.match(/<([^<>]+)>$/)
+      if (match) {
+        e.preventDefault()
+        replaceText(currentContent, blockKey, text.lastIndexOf('<'), '', setEditorState)
+      }
+    }
   }
 
   function getBlockStyle(block: Draft.ContentBlock) {
@@ -81,7 +98,10 @@ export default function EditorWrapper() {
   }
 
   return (
-    <div className="RichEditor-root">
+    <div
+      className="RichEditor-root"
+      onKeyDown={handleKeyDown}
+    >
       <BlockStyleControls
         editorState={editorState}
         onToggle={toggleBlockType}
