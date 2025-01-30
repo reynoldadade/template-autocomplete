@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import styles from './AutoComplete.module.css'
+import { useCustomDraftUtils } from '../hooks/useCustomDraftUtils'
 
 interface AutocompleteProps {
   children: React.ReactNode
@@ -7,11 +8,25 @@ interface AutocompleteProps {
    * this is the text from the editor, the value that follows the tag
    */
   decoratedText: string
+  contentState: Draft.ContentState
+  blockKey: string
+  start: number
+  newText: string
+  onEditorStateChange: (editorState: Draft.EditorState) => void
 }
 
 // Hardcoded suggestions for autocomplete
 const SUGGESTIONS = ['Tag1', 'Tag2', 'Tag3', 'TestValue', 'ExampleItem']
-export default function Autocomplete({ children, decoratedText }: AutocompleteProps) {
+export default function Autocomplete({
+  children,
+  decoratedText,
+  contentState,
+  blockKey,
+  start,
+  newText,
+  onEditorStateChange,
+}: AutocompleteProps) {
+  const { replaceText } = useCustomDraftUtils()
   // need to save the filtered suggestions somewhere
   const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([])
   //   to show and hide the suggestions
@@ -45,6 +60,7 @@ export default function Autocomplete({ children, decoratedText }: AutocompletePr
   // function to trigger when a suggestion is selected
   const handleSelect = (suggestion: string) => {
     // we need to put a replacement function here before setting the editor state
+    replaceText(contentState, blockKey, start, suggestion, onEditorStateChange)
     setShowSuggestions(false)
   }
 
