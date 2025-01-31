@@ -83,6 +83,10 @@ export default function EditorWrapper() {
     //   }
     //   return null
     // }
+    if (isSuggestionsShowing) {
+      e.preventDefault()
+      return null
+    }
     return getDefaultKeyBinding(e)
   }
 

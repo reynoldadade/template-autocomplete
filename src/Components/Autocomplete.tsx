@@ -84,9 +84,33 @@ export default function Autocomplete({
     )
     setShowSuggestions(false)
   }
+  function handleKeyDown(e: React.KeyboardEvent) {
+    console.log(e.key)
+    if (!showSuggestions) return
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setHighlightIndex((prev) => (prev + 1) % filteredSuggestions.length)
+    }
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setHighlightIndex(
+        (prev) => (prev - 1 + filteredSuggestions.length) % filteredSuggestions.length,
+      )
+    }
+
+    if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault()
+      handleSelect(filteredSuggestions[highlightIndex])
+    }
+  }
 
   return (
-    <span className={styles.autocomplete}>
+    <span
+      className={styles.autocomplete}
+      onKeyDown={handleKeyDown}
+    >
       {children}
       {/* show suggestions conditionally */}
       {filteredSuggestions.length > 0 && showSuggestions && (
