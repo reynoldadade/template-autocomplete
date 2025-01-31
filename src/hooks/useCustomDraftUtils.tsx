@@ -31,29 +31,37 @@ export const useCustomDraftUtils = () => {
       `<${newText}>`,
     )
 
-    const newEditorState = EditorState.push(
+    let newEditorState = EditorState.push(
       EditorState.createWithContent(newContentState),
       newContentState,
       'insert-characters',
     )
 
-    // Reset decorator to ensure autocomplete works again next time
-    onEditorStateChange(
-      EditorState.set(newEditorState, {
-        decorator: new CompositeDecorator([
-          {
-            strategy: autocompleteStrategy,
-            component: (props) => (
-              <Autocomplete
-                {...props}
-                onEditorStateChange={onEditorStateChange}
-              />
-            ),
-          },
-          { strategy: autocompletedEntryStrategy, component: AutocompletedEntry },
-        ]),
-      }),
-    )
+    newEditorState = EditorState.set(newEditorState, {
+      decorator: new CompositeDecorator([
+        {
+          strategy: autocompleteStrategy,
+          component: (props) => (
+            <Autocomplete
+              {...props}
+              onEditorStateChange={onEditorStateChange}
+            />
+          ),
+        },
+        { strategy: autocompletedEntryStrategy, component: AutocompletedEntry },
+      ]),
+    })
+
+    //  Reset selection position to ensure cursor is placed correctly
+    const selectionState = newEditorState.getSelection()
+    const updatedSelection = selectionState.merge({
+      anchorOffset: start + newText.length + 1, // Place cursor after inserted tag
+      focusOffset: start + newText.length + 1,
+    })
+
+    newEditorState = EditorState.forceSelection(newEditorState, updatedSelection)
+
+    onEditorStateChange(newEditorState)
   }
 
   // Autocomplete Strategy - detects "<>match_string" without "\n"

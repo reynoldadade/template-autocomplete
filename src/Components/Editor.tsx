@@ -104,14 +104,31 @@ export default function EditorWrapper() {
         '',
       )
 
-      // Update the editor state
-      onChange(
-        EditorState.push(
-          EditorState.createWithContent(newContentState),
-          newContentState,
-          'remove-range',
-        ),
+      // reset decorator after deletion
+      let newEditorState = EditorState.push(
+        EditorState.createWithContent(newContentState),
+        newContentState,
+        'remove-range',
       )
+
+      // reset strategy after deletion
+
+      newEditorState = EditorState.set(newEditorState, {
+        decorator: new CompositeDecorator([
+          {
+            strategy: autocompleteStrategy,
+            component: (props) => (
+              <Autocomplete
+                {...props}
+                onEditorStateChange={setEditorState}
+              />
+            ),
+          },
+          { strategy: autocompletedEntryStrategy, component: AutocompletedEntry },
+        ]),
+      })
+
+      onChange(newEditorState)
     }
   }
 
