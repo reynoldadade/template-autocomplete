@@ -13,6 +13,7 @@ interface AutocompleteProps {
   blockKey: string
   start: number
   onEditorStateChange: (editorState: Draft.EditorState) => void
+  onSuggestionsShowing: (isShowing: boolean) => void
 }
 
 // Hardcoded suggestions for autocomplete
@@ -24,6 +25,7 @@ export default function Autocomplete({
   blockKey,
   start,
   onEditorStateChange,
+  onSuggestionsShowing,
 }: AutocompleteProps) {
   const { replaceText } = useCustomDraftUtils()
   // need to save the filtered suggestions somewhere
@@ -60,11 +62,26 @@ export default function Autocomplete({
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+  //
+  useEffect(() => {
+    onSuggestionsShowing(showSuggestions && filteredSuggestions.length > 0)
+
+    return () => {
+      onSuggestionsShowing(false)
+    }
+  }, [showSuggestions, filteredSuggestions])
 
   // function to trigger when a suggestion is selected
   const handleSelect = (suggestion: string) => {
     // we need to put a replacement function here before setting the editor state
-    replaceText(contentState, blockKey, start, suggestion, onEditorStateChange)
+    replaceText(
+      contentState,
+      blockKey,
+      start,
+      suggestion,
+      onEditorStateChange,
+      onSuggestionsShowing,
+    )
     setShowSuggestions(false)
   }
 

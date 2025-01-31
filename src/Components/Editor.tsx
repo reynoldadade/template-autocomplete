@@ -19,6 +19,7 @@ import AutocompletedEntry from './AutocompleteEntry'
 
 export default function EditorWrapper() {
   const { autocompleteStrategy, autocompletedEntryStrategy } = useCustomDraftUtils()
+  const [isSuggestionsShowing, setIsSuggestionShowing] = useState<boolean>(false)
   const [editorState, setEditorState] = useState<EditorState>(() =>
     EditorState.createEmpty(
       new CompositeDecorator([
@@ -28,6 +29,7 @@ export default function EditorWrapper() {
             <Autocomplete
               {...props}
               onEditorStateChange={onChange}
+              onSuggestionsShowing={onSuggestionsShowing}
             />
           ),
         },
@@ -35,6 +37,11 @@ export default function EditorWrapper() {
       ]),
     ),
   )
+
+  // autocomplete results showing
+  function onSuggestionsShowing(isShowing: boolean) {
+    setIsSuggestionShowing(isShowing)
+  }
   const editor = useRef<Editor | null>(null)
 
   // create memo for content state
@@ -121,6 +128,7 @@ export default function EditorWrapper() {
               <Autocomplete
                 {...props}
                 onEditorStateChange={setEditorState}
+                onSuggestionsShowing={onSuggestionsShowing}
               />
             ),
           },

@@ -17,6 +17,7 @@ export const useCustomDraftUtils = () => {
     start: number,
     newText: string,
     onEditorStateChange: (editorState: EditorState) => void,
+    onSuggestionsShowing: (isShowing: boolean) => void,
   ) => {
     const block = contentState.getBlockForKey(blockKey)
     const text = block.getText()
@@ -45,6 +46,7 @@ export const useCustomDraftUtils = () => {
             <Autocomplete
               {...props}
               onEditorStateChange={onEditorStateChange}
+              onSuggestionsShowing={onSuggestionsShowing}
             />
           ),
         },
