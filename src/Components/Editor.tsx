@@ -1,5 +1,6 @@
 import {
   CompositeDecorator,
+  ContentState,
   Editor,
   EditorState,
   Modifier,
@@ -16,10 +17,17 @@ import clsx from 'clsx'
 import { useCustomDraftUtils } from '../hooks/useCustomDraftUtils'
 import Autocomplete from './Autocomplete'
 import AutocompletedEntry from './AutocompleteEntry'
+import useEditorStore from '../store'
 
 export default function EditorWrapper() {
+  // expose some refs from the child components
+  const autocompleteRef = useRef<{
+    handleSelect: (suggestion: string) => void
+  } | null>(null)
+
   const { autocompleteStrategy, autocompletedEntryStrategy } = useCustomDraftUtils()
   const [isSuggestionsShowing, setIsSuggestionShowing] = useState<boolean>(false)
+  const { highlightIndex, setHighlightIndex, filteredSuggestions } = useEditorStore()
   const [editorState, setEditorState] = useState<EditorState>(() =>
     EditorState.createEmpty(
       new CompositeDecorator([
@@ -27,9 +35,11 @@ export default function EditorWrapper() {
           strategy: autocompleteStrategy,
           component: (props) => (
             <Autocomplete
+              ref={autocompleteRef}
               {...props}
               onEditorStateChange={onChange}
               onSuggestionsShowing={onSuggestionsShowing}
+              replaceText={replaceText}
             />
           ),
         },
@@ -76,16 +86,30 @@ export default function EditorWrapper() {
   }
 
   function mapKeyToEditorCommand(e: React.KeyboardEvent) {
-    // if (e.key === 'Tab') {
-    //   const newEditorState = RichUtils.onTab(e, editorState, 4)
-    //   if (newEditorState !== editorState) {
-    //     onChange(newEditorState)
-    //   }
-    //   return null
-    // }
     if (isSuggestionsShowing) {
-      e.preventDefault()
-      return null
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setHighlightIndex((highlightIndex + 1) % filteredSuggestions.length)
+      }
+
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+
+        setHighlightIndex(
+          (highlightIndex - 1 + filteredSuggestions.length) % filteredSuggestions.length,
+        )
+      }
+
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        if (highlightIndex >= 0 && highlightIndex < filteredSuggestions.length) {
+          e.preventDefault()
+          e.stopPropagation()
+          const suggestion = filteredSuggestions[highlightIndex]
+
+          autocompleteRef.current?.handleSelect(suggestion)
+          return 'handled'
+        }
+      }
     }
     return getDefaultKeyBinding(e)
   }
@@ -133,6 +157,8 @@ export default function EditorWrapper() {
                 {...props}
                 onEditorStateChange={setEditorState}
                 onSuggestionsShowing={onSuggestionsShowing}
+                ref={autocompleteRef}
+                replaceText={replaceText}
               />
             ),
           },
@@ -142,6 +168,63 @@ export default function EditorWrapper() {
 
       onChange(newEditorState)
     }
+  }
+
+  const replaceText = (
+    contentState: ContentState,
+    blockKey: string,
+    start: number,
+    newText: string,
+    onEditorStateChange: (editorState: EditorState) => void,
+    onSuggestionsShowing: (isShowing: boolean) => void,
+  ) => {
+    // is replace function running
+    const block = contentState.getBlockForKey(blockKey)
+    const text = block.getText()
+    // Replace "<>match_string" with "<selected_text>"
+    const newContentState = Modifier.replaceText(
+      contentState,
+      SelectionState.createEmpty(blockKey).merge({
+        anchorOffset: start,
+        focusOffset: start + text.length,
+      }),
+      `<${newText}>`,
+    )
+
+    let newEditorState = EditorState.push(
+      EditorState.createWithContent(newContentState),
+      newContentState,
+      'insert-characters',
+    )
+
+    newEditorState = EditorState.set(newEditorState, {
+      decorator: new CompositeDecorator([
+        {
+          strategy: autocompleteStrategy,
+          component: (props) => (
+            <Autocomplete
+              {...props}
+              onEditorStateChange={onEditorStateChange}
+              onSuggestionsShowing={onSuggestionsShowing}
+              replaceText={replaceText}
+              ref={autocompleteRef}
+            />
+          ),
+        },
+        { strategy: autocompletedEntryStrategy, component: AutocompletedEntry },
+      ]),
+    })
+
+    //  Reset selection position to ensure cursor is placed correctly
+    const selectionState = newEditorState.getSelection()
+    const updatedSelection = selectionState.merge({
+      anchorOffset: start + newText.length + 1, // Place cursor after inserted tag
+      focusOffset: start + newText.length + 1,
+    })
+
+    newEditorState = EditorState.forceSelection(newEditorState, updatedSelection)
+
+    onEditorStateChange(newEditorState)
   }
 
   function getBlockStyle(block: Draft.ContentBlock) {

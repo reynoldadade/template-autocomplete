@@ -1,70 +1,7 @@
-import {
-  CompositeDecorator,
-  ContentBlock,
-  ContentState,
-  EditorState,
-  Modifier,
-  SelectionState,
-} from 'draft-js'
-import Autocomplete from '../Components/Autocomplete'
-import AutocompletedEntry from '../Components/AutocompleteEntry'
-import React from 'react'
+import { ContentBlock } from 'draft-js'
 
 export const useCustomDraftUtils = () => {
-  const replaceText = (
-    contentState: ContentState,
-    blockKey: string,
-    start: number,
-    newText: string,
-    onEditorStateChange: (editorState: EditorState) => void,
-    onSuggestionsShowing: (isShowing: boolean) => void,
-  ) => {
-    const block = contentState.getBlockForKey(blockKey)
-    const text = block.getText()
-
-    // Replace "<>match_string" with "<selected_text>"
-    const newContentState = Modifier.replaceText(
-      contentState,
-      SelectionState.createEmpty(blockKey).merge({
-        anchorOffset: start,
-        focusOffset: start + text.length,
-      }),
-      `<${newText}>`,
-    )
-
-    let newEditorState = EditorState.push(
-      EditorState.createWithContent(newContentState),
-      newContentState,
-      'insert-characters',
-    )
-
-    newEditorState = EditorState.set(newEditorState, {
-      decorator: new CompositeDecorator([
-        {
-          strategy: autocompleteStrategy,
-          component: (props) => (
-            <Autocomplete
-              {...props}
-              onEditorStateChange={onEditorStateChange}
-              onSuggestionsShowing={onSuggestionsShowing}
-            />
-          ),
-        },
-        { strategy: autocompletedEntryStrategy, component: AutocompletedEntry },
-      ]),
-    })
-
-    //  Reset selection position to ensure cursor is placed correctly
-    const selectionState = newEditorState.getSelection()
-    const updatedSelection = selectionState.merge({
-      anchorOffset: start + newText.length + 1, // Place cursor after inserted tag
-      focusOffset: start + newText.length + 1,
-    })
-
-    newEditorState = EditorState.forceSelection(newEditorState, updatedSelection)
-
-    onEditorStateChange(newEditorState)
-  }
+  // expose some refs from the child components
 
   // Autocomplete Strategy - detects "<>match_string" without "\n"
   const autocompleteStrategy = (
@@ -96,7 +33,6 @@ export const useCustomDraftUtils = () => {
   }
 
   return {
-    replaceText,
     autocompleteStrategy,
     autocompletedEntryStrategy,
   }
