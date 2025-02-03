@@ -30,23 +30,7 @@ export default function EditorWrapper() {
   const [isSuggestionsShowing, setIsSuggestionShowing] = useState<boolean>(false)
   const { highlightIndex, setHighlightIndex, filteredSuggestions } = useEditorStore()
   const [editorState, setEditorState] = useState<EditorState>(() =>
-    EditorState.createEmpty(
-      new CompositeDecorator([
-        {
-          strategy: autocompleteStrategy,
-          component: (props) => (
-            <Autocomplete
-              ref={autocompleteRef}
-              {...props}
-              onEditorStateChange={onChange}
-              onSuggestionsShowing={onSuggestionsShowing}
-              replaceText={replaceText}
-            />
-          ),
-        },
-        { strategy: autocompletedEntryStrategy, component: AutocompletedEntry },
-      ]),
-    ),
+    EditorState.createEmpty(createCompositeDecorator(onChange)),
   )
 
   // autocomplete results showing
@@ -155,21 +139,7 @@ export default function EditorWrapper() {
           // reset strategy after deletion
 
           newEditorState = EditorState.set(newEditorState, {
-            decorator: new CompositeDecorator([
-              {
-                strategy: autocompleteStrategy,
-                component: (props) => (
-                  <Autocomplete
-                    {...props}
-                    onEditorStateChange={setEditorState}
-                    onSuggestionsShowing={onSuggestionsShowing}
-                    ref={autocompleteRef}
-                    replaceText={replaceText}
-                  />
-                ),
-              },
-              { strategy: autocompletedEntryStrategy, component: AutocompletedEntry },
-            ]),
+            decorator: createCompositeDecorator(onChange),
           })
 
           onChange(newEditorState)
@@ -214,21 +184,7 @@ export default function EditorWrapper() {
     newEditorState = EditorState.setInlineStyleOverride(newEditorState, OrderedSet())
 
     newEditorState = EditorState.set(newEditorState, {
-      decorator: new CompositeDecorator([
-        {
-          strategy: autocompleteStrategy,
-          component: (props) => (
-            <Autocomplete
-              {...props}
-              onEditorStateChange={onEditorStateChange}
-              onSuggestionsShowing={onSuggestionsShowing}
-              replaceText={replaceText}
-              ref={autocompleteRef}
-            />
-          ),
-        },
-        { strategy: autocompletedEntryStrategy, component: AutocompletedEntry },
-      ]),
+      decorator: createCompositeDecorator(onEditorStateChange),
     })
 
     //  Reset selection position to ensure cursor is placed correctly
@@ -252,21 +208,42 @@ export default function EditorWrapper() {
     }
   }
 
+  // createCompositeDecorator
+  function createCompositeDecorator(onEditorStateChange: (editorState: EditorState) => void) {
+    return new CompositeDecorator([
+      {
+        strategy: autocompleteStrategy,
+        component: (props) => (
+          <Autocomplete
+            {...props}
+            onEditorStateChange={onEditorStateChange}
+            onSuggestionsShowing={onSuggestionsShowing}
+            replaceText={replaceText}
+            ref={autocompleteRef}
+          />
+        ),
+      },
+      { strategy: autocompletedEntryStrategy, component: AutocompletedEntry },
+    ])
+  }
+
   return (
     <div
       className="RichEditor-root"
       onKeyDown={handleKeyDown}
     >
       <div className="RichEditor-toolBar">
-        <BlockStyleControls
-          editorState={editorState}
-          onToggle={toggleBlockType}
-        />
+        <div className="RichEditor-controlWrapper">
+          <BlockStyleControls
+            editorState={editorState}
+            onToggle={toggleBlockType}
+          />
 
-        <InlineStyleControls
-          editorState={editorState}
-          onToggle={toggleInlineStyle}
-        />
+          <InlineStyleControls
+            editorState={editorState}
+            onToggle={toggleInlineStyle}
+          />
+        </div>
       </div>
       <div
         onClick={focusEditor}

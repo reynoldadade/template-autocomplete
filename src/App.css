@@ -55,8 +55,13 @@
 }
 .RichEditor-root .RichEditor-toolBar {
   display: flex;
-
+  align-items: center;
   margin-bottom: 10px;
+  justify-content: space-between;
+}
+
+.RichEditor-toolBar .RichEditor-controlWrapper {
+  display: flex;
 }
 
 .RichEditor-controls {
@@ -86,4 +91,18 @@
   background-color: #f7f7f7;
   border-bottom: 1px solid #e0e0e0;
   padding: 20px 10px;
+}
+
+.Button {
+  background-color: #5890ff;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 10px 20px;
+}
+
+.hidden {
+  display: none;
 }
