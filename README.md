@@ -61,3 +61,7 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 yarn
 yarn start
 ```
+
+## Deployment
+
+Please find the deployment here [vercel deployment](https://template-autocomplete-inky.vercel.app/)
