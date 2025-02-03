@@ -1,4 +1,4 @@
-import { ContentBlock } from 'draft-js'
+import { ContentBlock, ContentState } from 'draft-js'
 
 export const useCustomDraftUtils = () => {
   // expose some refs from the child components
@@ -23,26 +23,12 @@ export const useCustomDraftUtils = () => {
   const autocompletedEntryStrategy = (
     contentBlock: ContentBlock,
     callback: (start: number, end: number) => void,
+    contentState: ContentState,
   ) => {
-    const text = contentBlock.getText()
-
-    // Match words (without including <>)
-    const regex = /\b[A-Za-z0-9_]+\b/g
-    let matchArr
-
-    while ((matchArr = regex.exec(text)) !== null) {
-      const start = matchArr.index
-      const end = start + matchArr[0].length
-
-      // Check if the word has the AUTOCOMPLETE inline style
-      const hasAutocompleteStyle = contentBlock
-        .getInlineStyleAt(start) // Get inline styles at word start
-        .has('AUTOCOMPLETE') // Check if AUTOCOMPLETE exists
-
-      if (hasAutocompleteStyle) {
-        callback(start, end) // ✅ Highlight only if style is applied
-      }
-    }
+    contentBlock.findEntityRanges((character) => {
+      const entityKey = character.getEntity()
+      return entityKey !== null && contentState.getEntity(entityKey).getType() === 'AUTOCOMPLETE'
+    }, callback)
   }
 
   return {

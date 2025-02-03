@@ -122,54 +122,58 @@ export default function EditorWrapper() {
     const currentContent = editorState.getCurrentContent()
     const blockKey = selection.getStartKey()
     const block = currentContent.getBlockForKey(blockKey)
-    const text = block.getText()
+
     const cursorPosition = selection.getStartOffset()
 
-    // Check if Backspace is pressed at the end of an autocompleted entry
-    const match = text.slice(0, cursorPosition).match(/\b[A-Za-z0-9_]+\b$/)
-    if (e.key === 'Backspace' && match) {
+    if (e.key === 'Backspace') {
       e.preventDefault() // Prevent default character deletion
-      const inlineStyles = editorState.getCurrentInlineStyle()
+      const entityKey = block.getEntityAt(cursorPosition - 1)
+      if (entityKey) {
+        const entity = currentContent.getEntity(entityKey)
+        if (entity.getType() === 'AUTOCOMPLETE') {
+          // Find the range of the entity
+          let entityStart = cursorPosition - 1
+          while (entityStart > 0 && block.getEntityAt(entityStart - 1) === entityKey) {
+            entityStart--
+          }
+          const newContentState = Modifier.replaceText(
+            currentContent,
+            SelectionState.createEmpty(blockKey).merge({
+              anchorOffset: entityStart, // Start of entity
+              focusOffset: cursorPosition, // End of entity
+            }),
+            '',
+          )
 
-      if (inlineStyles.has('AUTOCOMPLETE')) {
-        // Delete the entire <Tag> entry
-        const newContentState = Modifier.replaceText(
-          currentContent,
-          SelectionState.createEmpty(blockKey).merge({
-            anchorOffset: cursorPosition - match[0].length, // Start of the match
-            focusOffset: cursorPosition, // End of the match
-          }),
-          '',
-        )
+          // reset decorator after deletion
+          let newEditorState = EditorState.push(
+            EditorState.createWithContent(newContentState),
+            newContentState,
+            'remove-range',
+          )
 
-        // reset decorator after deletion
-        let newEditorState = EditorState.push(
-          EditorState.createWithContent(newContentState),
-          newContentState,
-          'remove-range',
-        )
+          // reset strategy after deletion
 
-        // reset strategy after deletion
+          newEditorState = EditorState.set(newEditorState, {
+            decorator: new CompositeDecorator([
+              {
+                strategy: autocompleteStrategy,
+                component: (props) => (
+                  <Autocomplete
+                    {...props}
+                    onEditorStateChange={setEditorState}
+                    onSuggestionsShowing={onSuggestionsShowing}
+                    ref={autocompleteRef}
+                    replaceText={replaceText}
+                  />
+                ),
+              },
+              { strategy: autocompletedEntryStrategy, component: AutocompletedEntry },
+            ]),
+          })
 
-        newEditorState = EditorState.set(newEditorState, {
-          decorator: new CompositeDecorator([
-            {
-              strategy: autocompleteStrategy,
-              component: (props) => (
-                <Autocomplete
-                  {...props}
-                  onEditorStateChange={setEditorState}
-                  onSuggestionsShowing={onSuggestionsShowing}
-                  ref={autocompleteRef}
-                  replaceText={replaceText}
-                />
-              ),
-            },
-            { strategy: autocompletedEntryStrategy, component: AutocompletedEntry },
-          ]),
-        })
-
-        onChange(newEditorState)
+          onChange(newEditorState)
+        }
       }
     }
   }
@@ -185,7 +189,10 @@ export default function EditorWrapper() {
     // is replace function running
     const block = contentState.getBlockForKey(blockKey)
     const text = block.getText()
-    // Replace "<>match_string" with "<selected_text>"
+    //  Create an entity for AUTOCOMPLETE styling
+    const contentStateWithEntity = contentState.createEntity('AUTOCOMPLETE', 'MUTABLE')
+    const entityKey = contentStateWithEntity.getLastCreatedEntityKey()
+    // Replace "<>match_string" with "selected_text"
     const newContentState = Modifier.replaceText(
       contentState,
       SelectionState.createEmpty(blockKey).merge({
@@ -193,7 +200,8 @@ export default function EditorWrapper() {
         focusOffset: start + text.length,
       }),
       `${newText}`,
-      OrderedSet(['AUTOCOMPLETE']),
+      undefined,
+      entityKey,
     )
 
     let newEditorState = EditorState.push(
@@ -201,6 +209,7 @@ export default function EditorWrapper() {
       newContentState,
       'insert-characters',
     )
+
     // remove the styling after the tag is inserted
     newEditorState = EditorState.setInlineStyleOverride(newEditorState, OrderedSet())
 
@@ -225,8 +234,8 @@ export default function EditorWrapper() {
     //  Reset selection position to ensure cursor is placed correctly
     const selectionState = newEditorState.getSelection()
     const updatedSelection = selectionState.merge({
-      anchorOffset: start + newText.length + 1, // Place cursor after inserted tag
-      focusOffset: start + newText.length + 1,
+      anchorOffset: start + newText.length, // Place cursor after inserted tag
+      focusOffset: start + newText.length,
     })
 
     newEditorState = EditorState.forceSelection(newEditorState, updatedSelection)
