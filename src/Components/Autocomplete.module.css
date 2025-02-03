@@ -1,0 +1,27 @@
+.autocomplete {
+  position: relative;
+  background-color: yellow;
+}
+.dropDown {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 5px;
+  top: 20px;
+  left: 0;
+  z-index: 1000;
+  width: 150px;
+}
+
+.dropDown .suggestions {
+  padding: 5px;
+  cursor: pointer;
+}
+
+.highlight {
+  background-color: #ddd;
+}
+
+.noHighlight {
+  background-color: #fff;
+}
