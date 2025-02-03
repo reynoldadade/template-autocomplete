@@ -25,10 +25,23 @@ export const useCustomDraftUtils = () => {
     callback: (start: number, end: number) => void,
   ) => {
     const text = contentBlock.getText()
-    const regex = /<[^<>]+>/g // Matches already completed entries like <Tag1>
+
+    // Match words (without including <>)
+    const regex = /\b[A-Za-z0-9_]+\b/g
     let matchArr
+
     while ((matchArr = regex.exec(text)) !== null) {
-      callback(matchArr.index, matchArr.index + matchArr[0].length)
+      const start = matchArr.index
+      const end = start + matchArr[0].length
+
+      // Check if the word has the AUTOCOMPLETE inline style
+      const hasAutocompleteStyle = contentBlock
+        .getInlineStyleAt(start) // Get inline styles at word start
+        .has('AUTOCOMPLETE') // Check if AUTOCOMPLETE exists
+
+      if (hasAutocompleteStyle) {
+        callback(start, end) // ✅ Highlight only if style is applied
+      }
     }
   }
 

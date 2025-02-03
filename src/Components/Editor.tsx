@@ -18,6 +18,7 @@ import { useCustomDraftUtils } from '../hooks/useCustomDraftUtils'
 import Autocomplete from './Autocomplete'
 import AutocompletedEntry from './AutocompleteEntry'
 import useEditorStore from '../store'
+import { OrderedSet } from 'immutable'
 
 export default function EditorWrapper() {
   // expose some refs from the child components
@@ -125,48 +126,51 @@ export default function EditorWrapper() {
     const cursorPosition = selection.getStartOffset()
 
     // Check if Backspace is pressed at the end of an autocompleted entry
-    const match = text.slice(0, cursorPosition).match(/<([^<>]+)>$/)
+    const match = text.slice(0, cursorPosition).match(/\b[A-Za-z0-9_]+\b$/)
     if (e.key === 'Backspace' && match) {
       e.preventDefault() // Prevent default character deletion
+      const inlineStyles = editorState.getCurrentInlineStyle()
 
-      // Delete the entire <Tag> entry
-      const newContentState = Modifier.replaceText(
-        currentContent,
-        SelectionState.createEmpty(blockKey).merge({
-          anchorOffset: cursorPosition - match[0].length, // Start of the match
-          focusOffset: cursorPosition, // End of the match
-        }),
-        '',
-      )
+      if (inlineStyles.has('AUTOCOMPLETE')) {
+        // Delete the entire <Tag> entry
+        const newContentState = Modifier.replaceText(
+          currentContent,
+          SelectionState.createEmpty(blockKey).merge({
+            anchorOffset: cursorPosition - match[0].length, // Start of the match
+            focusOffset: cursorPosition, // End of the match
+          }),
+          '',
+        )
 
-      // reset decorator after deletion
-      let newEditorState = EditorState.push(
-        EditorState.createWithContent(newContentState),
-        newContentState,
-        'remove-range',
-      )
+        // reset decorator after deletion
+        let newEditorState = EditorState.push(
+          EditorState.createWithContent(newContentState),
+          newContentState,
+          'remove-range',
+        )
 
-      // reset strategy after deletion
+        // reset strategy after deletion
 
-      newEditorState = EditorState.set(newEditorState, {
-        decorator: new CompositeDecorator([
-          {
-            strategy: autocompleteStrategy,
-            component: (props) => (
-              <Autocomplete
-                {...props}
-                onEditorStateChange={setEditorState}
-                onSuggestionsShowing={onSuggestionsShowing}
-                ref={autocompleteRef}
-                replaceText={replaceText}
-              />
-            ),
-          },
-          { strategy: autocompletedEntryStrategy, component: AutocompletedEntry },
-        ]),
-      })
+        newEditorState = EditorState.set(newEditorState, {
+          decorator: new CompositeDecorator([
+            {
+              strategy: autocompleteStrategy,
+              component: (props) => (
+                <Autocomplete
+                  {...props}
+                  onEditorStateChange={setEditorState}
+                  onSuggestionsShowing={onSuggestionsShowing}
+                  ref={autocompleteRef}
+                  replaceText={replaceText}
+                />
+              ),
+            },
+            { strategy: autocompletedEntryStrategy, component: AutocompletedEntry },
+          ]),
+        })
 
-      onChange(newEditorState)
+        onChange(newEditorState)
+      }
     }
   }
 
@@ -188,7 +192,8 @@ export default function EditorWrapper() {
         anchorOffset: start,
         focusOffset: start + text.length,
       }),
-      `<${newText}>`,
+      `${newText}`,
+      OrderedSet(['AUTOCOMPLETE']),
     )
 
     let newEditorState = EditorState.push(
@@ -196,6 +201,8 @@ export default function EditorWrapper() {
       newContentState,
       'insert-characters',
     )
+    // remove the styling after the tag is inserted
+    newEditorState = EditorState.setInlineStyleOverride(newEditorState, OrderedSet())
 
     newEditorState = EditorState.set(newEditorState, {
       decorator: new CompositeDecorator([
