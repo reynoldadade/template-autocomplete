@@ -30,6 +30,7 @@ interface AutocompleteProps {
     start: number,
     newText: string,
     onEditorStateChange: (editorState: Draft.EditorState) => void,
+    filteredSuggestions: string[],
   ) => void
 }
 const Autocomplete = forwardRef(
@@ -80,11 +81,7 @@ const Autocomplete = forwardRef(
         const response = await fetchDataMuseWords(matchString)
         const data = response.data
         const words = data.map((item: MuseWord) => item.word)
-        setFilteredSuggestions(
-          words.length > 0
-            ? words.filter((w) => w.toLowerCase().startsWith(matchString.toLowerCase()))
-            : [matchString],
-        )
+        setFilteredSuggestions(words.length > 0 ? words : [matchString])
       } catch (error) {
         console.log('error', error)
       }
@@ -124,7 +121,14 @@ const Autocomplete = forwardRef(
       console.log('suggestion', suggestion)
       if (!contentState || !blockKey) return // in case it does not exist
       // we need to put a replacement function here before setting the editor state
-      replaceText(contentState, blockKey, start, suggestion, onEditorStateChange)
+      replaceText(
+        contentState,
+        blockKey,
+        start,
+        suggestion,
+        onEditorStateChange,
+        filteredSuggestions,
+      )
       console.log('after replacetext')
 
       // setShowSuggestions(false)

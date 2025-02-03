@@ -150,24 +150,40 @@ export default function EditorWrapper() {
     start: number,
     newText: string,
     onEditorStateChange: (editorState: EditorState) => void,
+    filteredSuggestions: string[],
   ) => {
     // is replace function running
     const block = contentState.getBlockForKey(blockKey)
     const text = block.getText()
-    //  Create an entity for AUTOCOMPLETE styling
-    const contentStateWithEntity = contentState.createEntity('AUTOCOMPLETE', 'MUTABLE')
-    const entityKey = contentStateWithEntity.getLastCreatedEntityKey()
-    // Replace "<>match_string" with "selected_text"
-    const newContentState = Modifier.replaceText(
-      contentState,
-      SelectionState.createEmpty(blockKey).merge({
-        anchorOffset: start,
-        focusOffset: start + text.length,
-      }),
-      `${newText}`,
-      undefined,
-      entityKey,
-    )
+    let newContentState
+    // Check if the word exists in filteredSuggestions
+    const isValidSuggestion = filteredSuggestions.includes(newText)
+    if (isValidSuggestion) {
+      const contentStateWithEntity = contentState.createEntity('AUTOCOMPLETE', 'MUTABLE')
+      const entityKey = contentStateWithEntity.getLastCreatedEntityKey()
+      // Replace "<>match_string" with "selected_text"
+      newContentState = Modifier.replaceText(
+        contentState,
+        SelectionState.createEmpty(blockKey).merge({
+          anchorOffset: start,
+          focusOffset: start + text.length,
+        }),
+        `${newText}`,
+        undefined,
+        entityKey,
+      )
+    } else {
+      // Replace "<>match_string" with "selected_text"
+      newContentState = Modifier.replaceText(
+        contentState,
+        SelectionState.createEmpty(blockKey).merge({
+          anchorOffset: start,
+          focusOffset: start + text.length,
+        }),
+        `${newText}`,
+        undefined,
+      )
+    }
 
     let newEditorState = EditorState.push(
       EditorState.createWithContent(newContentState),
