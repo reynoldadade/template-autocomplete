@@ -1,6 +1,6 @@
 import { ContentBlock, ContentState } from 'draft-js'
 
-export const useCustomDraftUtils = () => {
+const useStrategies = () => {
   // expose some refs from the child components
 
   // Autocomplete Strategy - detects "<>match_string" without "\n"
@@ -36,3 +36,5 @@ export const useCustomDraftUtils = () => {
     autocompletedEntryStrategy,
   }
 }
+
+export default useStrategies

@@ -14,11 +14,10 @@ import React from 'react'
 import BlockStyleControls from './BlockStyleControls'
 import InlineStyleControls from './InlineStyleControls'
 import clsx from 'clsx'
-import { useCustomDraftUtils } from '../hooks/useCustomDraftUtils'
+import useStrategies from '../hooks/useStrategies'
 import Autocomplete from './Autocomplete'
 import AutocompletedEntry from './AutocompleteEntry'
 import useEditorStore from '../store'
-import { OrderedSet } from 'immutable'
 
 export default function EditorWrapper() {
   // expose some refs from the child components
@@ -26,7 +25,7 @@ export default function EditorWrapper() {
     handleSelect: (suggestion: string) => void
   } | null>(null)
 
-  const { autocompleteStrategy, autocompletedEntryStrategy } = useCustomDraftUtils()
+  const { autocompleteStrategy, autocompletedEntryStrategy } = useStrategies()
   const [isSuggestionsShowing, setIsSuggestionShowing] = useState<boolean>(false)
   const { highlightIndex, setHighlightIndex, filteredSuggestions } = useEditorStore()
   const [editorState, setEditorState] = useState<EditorState>(() =>
@@ -179,9 +178,6 @@ export default function EditorWrapper() {
       newContentState,
       'insert-characters',
     )
-
-    // remove the styling after the tag is inserted
-    newEditorState = EditorState.setInlineStyleOverride(newEditorState, OrderedSet())
 
     newEditorState = EditorState.set(newEditorState, {
       decorator: createCompositeDecorator(onEditorStateChange),
