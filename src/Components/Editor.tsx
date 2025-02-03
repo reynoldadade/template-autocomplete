@@ -257,15 +257,17 @@ export default function EditorWrapper() {
       className="RichEditor-root"
       onKeyDown={handleKeyDown}
     >
-      <BlockStyleControls
-        editorState={editorState}
-        onToggle={toggleBlockType}
-      />
+      <div className="RichEditor-toolBar">
+        <BlockStyleControls
+          editorState={editorState}
+          onToggle={toggleBlockType}
+        />
 
-      <InlineStyleControls
-        editorState={editorState}
-        onToggle={toggleInlineStyle}
-      />
+        <InlineStyleControls
+          editorState={editorState}
+          onToggle={toggleInlineStyle}
+        />
+      </div>
       <div
         onClick={focusEditor}
         className={clsx(
@@ -279,7 +281,7 @@ export default function EditorWrapper() {
           ref={editor}
           editorState={editorState}
           onChange={setEditorState}
-          placeholder="Write something!"
+          placeholder="Start creating!"
           handleKeyCommand={handleKeyCommand}
           keyBindingFn={mapKeyToEditorCommand}
           blockStyleFn={getBlockStyle}
