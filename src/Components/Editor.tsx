@@ -270,6 +270,7 @@ export default function EditorWrapper() {
           handleKeyCommand={handleKeyCommand}
           keyBindingFn={mapKeyToEditorCommand}
           blockStyleFn={getBlockStyle}
+          data-testid="editor"
         />
       </div>
     </div>
