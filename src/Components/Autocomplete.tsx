@@ -79,9 +79,12 @@ const Autocomplete = forwardRef(
       try {
         const response = await fetchDataMuseWords(matchString)
         const data = response.data
-        console.log('data', data)
         const words = data.map((item: MuseWord) => item.word)
-        setFilteredSuggestions(words.length > 0 ? words : [matchString])
+        setFilteredSuggestions(
+          words.length > 0
+            ? words.filter((w) => w.toLowerCase().startsWith(matchString.toLowerCase()))
+            : [matchString],
+        )
       } catch (error) {
         console.log('error', error)
       }
@@ -141,7 +144,7 @@ const Autocomplete = forwardRef(
               <div
                 key={suggestion}
                 className={clsx(
-                  styles.dropDownItem,
+                  styles.dropdownItem,
                   index === highlightIndex ? styles.highlight : styles.noHighlight,
                 )}
                 onClick={() => handleSelect(suggestion)}
