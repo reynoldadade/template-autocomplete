@@ -1,7 +1,17 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react'
 import styles from './Autocomplete.module.css'
 import clsx from 'clsx'
 import useEditorStore from '../store'
+import fetchDataMuseWords, { MuseWord } from '../service/api'
+import debounce from 'lodash/debounce'
 
 interface AutocompleteProps {
   children: React.ReactNode
@@ -52,17 +62,31 @@ const Autocomplete = forwardRef(
     // const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([])
     const matchString = decoratedText.replace('<>', '')
 
+    const debouncedAutoCompleteSuggestions = useCallback(
+      debounce(getAutocompleteSuggestions, 500),
+      [],
+    )
+
     // need a function to filter the suggestions
     // this will run everytime matchstring changes
     useEffect(() => {
       if (matchString.length > 0) {
-        const filtered = SUGGESTIONS.filter((s) =>
-          s.toLocaleLowerCase().startsWith(matchString.toLowerCase()),
-        )
-        setFilteredSuggestions(filtered.length > 0 ? filtered : [matchString])
+        debouncedAutoCompleteSuggestions(matchString)
         setHighlightIndex(0)
       }
     }, [matchString, SUGGESTIONS, setFilteredSuggestions, setHighlightIndex])
+
+    async function getAutocompleteSuggestions(matchString: string) {
+      try {
+        const response = await fetchDataMuseWords(matchString)
+        const data = response.data
+        console.log('data', data)
+        const words = data.map((item: MuseWord) => item.word)
+        setFilteredSuggestions(words.length > 0 ? words : [matchString])
+      } catch (error) {
+        console.log('error', error)
+      }
+    }
 
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -79,7 +103,7 @@ const Autocomplete = forwardRef(
         document.removeEventListener('mousedown', handleClickOutside)
         setFilteredSuggestions([])
       }
-    }, [])
+    }, [setFilteredSuggestions])
     //
     useEffect(() => {
       onSuggestionsShowing(showSuggestions && filteredSuggestions.length > 0)
