@@ -20,10 +20,15 @@ import AutocompletedEntry from './AutocompleteEntry'
 import useEditorStore from '../store'
 
 export default function EditorWrapper() {
+  /* refs */
   // expose some refs from the child components
   const autocompleteRef = useRef<{
     handleSelect: (suggestion: string) => void
   } | null>(null)
+  // ref for the editor
+  const editor = useRef<Editor | null>(null)
+
+  /***  refs end here */
 
   const { autocompleteStrategy, autocompletedEntryStrategy } = useStrategies()
   const [isSuggestionsShowing, setIsSuggestionShowing] = useState<boolean>(false)
@@ -32,29 +37,21 @@ export default function EditorWrapper() {
     EditorState.createEmpty(createCompositeDecorator(onChange)),
   )
 
-  // autocomplete results showing
-  function onSuggestionsShowing(isShowing: boolean) {
-    setIsSuggestionShowing(isShowing)
-  }
-  const editor = useRef<Editor | null>(null)
-
   // create memo for content state
 
   const contentState = useMemo(() => editorState.getCurrentContent(), [editorState])
 
+  // autocomplete results showing
+  function onSuggestionsShowing(isShowing: boolean) {
+    setIsSuggestionShowing(isShowing)
+  }
+  //  function to focus the editor
   function focusEditor() {
     if (editor.current) {
       editor.current.focus()
     }
   }
-  // this function is called when a block style button is clicked
-  function toggleBlockType(blockType: Draft.DraftModel.Constants.DraftBlockType) {
-    onChange(RichUtils.toggleBlockType(editorState, blockType))
-  }
-  // this function is called when an inline style button is clicked
-  function toggleInlineStyle(inlineStyle: string) {
-    onChange(RichUtils.toggleInlineStyle(editorState, inlineStyle))
-  }
+
   // this is to handle the change event of the editor its cleaner than calling setState directly
   function onChange(editorState: EditorState) {
     setEditorState(editorState)
@@ -153,7 +150,6 @@ export default function EditorWrapper() {
     start: number,
     newText: string,
     onEditorStateChange: (editorState: EditorState) => void,
-    onSuggestionsShowing: (isShowing: boolean) => void,
   ) => {
     // is replace function running
     const block = contentState.getBlockForKey(blockKey)
@@ -232,12 +228,12 @@ export default function EditorWrapper() {
         <div className="RichEditor-controlWrapper">
           <BlockStyleControls
             editorState={editorState}
-            onToggle={toggleBlockType}
+            onChange={onChange}
           />
 
           <InlineStyleControls
             editorState={editorState}
-            onToggle={toggleInlineStyle}
+            onChange={onChange}
           />
         </div>
       </div>

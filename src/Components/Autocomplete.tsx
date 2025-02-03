@@ -30,7 +30,6 @@ interface AutocompleteProps {
     start: number,
     newText: string,
     onEditorStateChange: (editorState: Draft.EditorState) => void,
-    onSuggestionsShowing: (isShowing: boolean) => void,
   ) => void
 }
 const Autocomplete = forwardRef(
@@ -122,14 +121,7 @@ const Autocomplete = forwardRef(
       console.log('suggestion', suggestion)
       if (!contentState || !blockKey) return // in case it does not exist
       // we need to put a replacement function here before setting the editor state
-      replaceText(
-        contentState,
-        blockKey,
-        start,
-        suggestion,
-        onEditorStateChange,
-        onSuggestionsShowing,
-      )
+      replaceText(contentState, blockKey, start, suggestion, onEditorStateChange)
       console.log('after replacetext')
 
       // setShowSuggestions(false)

@@ -1,13 +1,13 @@
-import { EditorState } from 'draft-js'
+import { EditorState, RichUtils } from 'draft-js'
 import React from 'react'
 import FormatButton from './FormatButton'
 
 interface BlockStyleControlsProps {
   editorState: EditorState
-  onToggle: (blockType: string) => void
+  onChange: (editorState: EditorState) => void
 }
 
-export default function BlockStyleControls({ editorState, onToggle }: BlockStyleControlsProps) {
+export default function BlockStyleControls({ editorState, onChange }: BlockStyleControlsProps) {
   // possible block types taking from Draft.js examples
   const BLOCK_TYPES = [
     { label: 'H1', style: 'header-one' },
@@ -26,6 +26,11 @@ export default function BlockStyleControls({ editorState, onToggle }: BlockStyle
     .getCurrentContent()
     .getBlockForKey(selection.getStartKey())
     .getType()
+
+  // this function is called when a block style button is clicked
+  function toggleBlockType(blockType: Draft.DraftModel.Constants.DraftBlockType) {
+    onChange(RichUtils.toggleBlockType(editorState, blockType))
+  }
   return (
     <div className="RichEditor-controls">
       {BLOCK_TYPES.map((type) => (
@@ -33,7 +38,7 @@ export default function BlockStyleControls({ editorState, onToggle }: BlockStyle
           key={type.label}
           active={type.style === blockType}
           label={type.label}
-          onToggle={onToggle}
+          onToggle={toggleBlockType}
           style={type.style}
         />
       ))}
